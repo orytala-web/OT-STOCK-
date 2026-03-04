@@ -37,7 +37,8 @@ def calculate_score(df, index_df):
 
     score = 0
 
-    if distance < 0.02:
+  if (distance < 0.02).any():
+
         score += (1 - distance) * 30
 
     if slope > 0:
