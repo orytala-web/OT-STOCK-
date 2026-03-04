@@ -9,48 +9,36 @@ from datetime import datetime
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# רשימה מאוחדת ומלאה (ישראל + ארה"ב)
+# רשימת מניות ישראלית רחבה (ת"א 125 + יתר נבחרות)
 STOCKS = [
-    "SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLV",
-    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", 
-    "PHOE.TA", "MGDL.TA", "HRL.TA", "CLIS.TA", "ALTR.TA", "MENO.TA",
-    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", 
-    "SELA.TA", "MVNE.TA", "GSPT.TA", "ENGL.TA", "ARPT.TA", "BSRE.TA", "PROP.TA",
-    "AURA.TA", "AFRE.TA", "IBPR.TA", "ISRS.TA", "GLDS.TA", "ZMH.TA",
-    "STRS.TA", "TNVH.TA", "WILH.TA", "SACH.TA", "VICT.TA", "RAMI.TA", "YCHL.TA", 
-    "NETO.TA", "TEVA.TA", "OPK.TA", "ELAL.TA", "DIPL.TA", "FOX.TA", "GOLF.TA",
-    "NICE.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "SPNS.TA", 
-    "AUDC.TA", "GILAT.TA", "MTRX.TA", "ONIT.TA", "ENOG.TA", "ENER.TA", "NVRG.TA", 
-    "PZOL.TA", "DLTI.TA", "ELCO.TA", "EVNR.TA",
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ADBE", "ASML",
-    "AMD", "QCOM", "TXN", "INTC", "MU", "AMAT", "LRCX", "ADI", "KLAC", "SNPS",
-    "CDNS", "PANW", "FTNT", "CSCO", "ORCL", "CRM", "ACN", "IBM", "INTU", "NOW",
-    "UBER", "ABNB", "SHOP", "NFLX", "TMUS", "VZ", "T", "CMCSA", "DIS", "EA",
-    "JPM", "BAC", "WFC", "C", "GS", "MS", "V", "MA", "AXP", "PYPL", "BLK",
-    "BX", "AMP", "SCHW", "CB", "MMC", "PGR", "MET", "PRU", "AIG", "TRV",
-    "SPGI", "MCO", "ICE", "CME", "COF", "DFS", "SYF", "USB", "TFC", "PNC",
-    "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "AMGN", "TMO", "DHR", "ISRG",
-    "GILD", "VRTX", "REGN", "BMY", "BSX", "SYK", "ZTS", "BDX", "MCK", "ABC",
-    "CI", "CVS", "HCA", "GEHC", "IDXX", "IQV", "EW", "HUM", "MDT", "BAX",
-    "WMT", "COST", "TGT", "HD", "LOW", "NKE", "SBUX", "TJX", "EL", "CL",
-    "PG", "KO", "PEP", "PM", "MO", "MDLZ", "ADM", "CAT", "DE", "GE",
-    "HON", "BA", "LMT", "RTX", "NOC", "GD", "MMM", "UPS", "FDX", "UNP",
-    "CSX", "NSC", "ETN", "EMR", "ITW", "PH", "AME", "ROK", "PCAR", "FAST",
-    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "PXD", "DVN",
-    "NEE", "DUK", "SO", "D", "AEP", "EXC", "PCG", "SRE", "ED", "PEG"
+    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA", "CLIS.TA", "ALTR.TA", "MENO.TA",
+    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", "SELA.TA", "MVNE.TA", "GSPT.TA", "ENGL.TA", 
+    "ARPT.TA", "BSRE.TA", "PROP.TA", "AURA.TA", "AFRE.TA", "IBPR.TA", "ISRS.TA", "GLDS.TA", "ZMH.TA", "ALON.TA", "AMAL.TA",
+    "NICE.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "SPNS.TA", "AUDC.TA", "GILAT.TA", "MTRX.TA", "ONIT.TA", "ONE.TA", "FATT.TA",
+    "SKBN.TA", "PLTR.TA", "MAGS.TA", "ENOG.TA", "PSTG.TA", "OPK.TA", "ICL.TA", "ORL.TA", "DEOL.TA", "ENER.TA", "NVRG.TA", 
+    "PZOL.TA", "DLTI.TA", "EVNR.TA", "OPC.TA", "KEN.TA", "GCT.TA", "STRS.TA", "TNVH.TA", "WILH.TA", "SACH.TA", "VICT.TA", 
+    "RAMI.TA", "YCHL.TA", "NETO.TA", "TEVA.TA", "ELAL.TA", "DIPL.TA", "FOX.TA", "GOLF.TA", "ELCO.TA", "ELECT.TA", "YCDA.TA", 
+    "LSTG.TA", "IES.TA", "PSTR.TA", "MSRD.TA", "SMRT.TA", "PLMA.TA", "TLRP.TA", "KBY.TA", "DKL.TA", "IDIN.TA", "AZR.TA"
 ]
 
 def calculate_score(df):
     try:
         close = df["Close"].squeeze()
         if len(close) < 160: return None
+        
         ma150 = close.rolling(150).mean()
         curr_price = close.iloc[-1]
         curr_ma = ma150.iloc[-1]
+        
         if pd.isna(curr_ma) or curr_ma == 0: return None
+        
         diff_pct = (curr_price - curr_ma) / curr_ma
-        # מרחק של עד 3% מעל הממוצע
-        if diff_pct < 0 or diff_pct > 0.03: return None
+        
+        # פילטר קשיח: רק מניות שבין 0% ל-3% מעל הממוצע
+        if diff_pct < 0 or diff_pct > 0.03: 
+            return None
+        
+        # ככל שקרוב ל-0, הציון גבוה יותר
         score = (1 - (diff_pct / 0.03)) * 100
         return round(score, 2), round(diff_pct * 100, 2)
     except:
@@ -58,11 +46,13 @@ def calculate_score(df):
 
 def main():
     results = []
-    print(f"Starting scan for {len(STOCKS)} stocks...")
+    print(f"Scanning {len(STOCKS)} Israeli stocks...")
+    
     for stock in STOCKS:
         try:
             df = yf.download(stock, period="1y", progress=False)
             if df.empty: continue
+            
             res = calculate_score(df)
             if res:
                 score, dist = res
@@ -74,28 +64,23 @@ def main():
     today = datetime.today().strftime('%d/%m/%Y')
     
     if not top_results:
-        msg = f"Scanner {today}: No stocks found near MA150 support."
+        msg = f"🔍 סורק ישראל {today}:\nאין כרגע מניות שנוגעות בממוצע 150. כולן רחוקות מדי או מתחתיו."
     else:
-        msg = f"📍 MA150 Support Scanner - {today}\n\n"
+        msg = f"📍 הזדמנויות קרובות לממוצע 150 - {today}\n\n"
         for i, (stock, score, dist) in enumerate(top_results, 1):
             name = stock.replace(".TA", "")
-            msg += f"{i}. {name}: Dist {dist}% (Score: {score})\n"
+            msg += f"{i}. {name}: מרחק {dist}% (ציון: {score})\n"
             
     send_telegram(msg)
 
 def send_telegram(message):
-    if not TELEGRAM_TOKEN or not CHAT_ID:
-        print("Missing Telegram credentials")
-        return
+    if not TELEGRAM_TOKEN or not CHAT_ID: return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    try:
-        requests.post(url, data={"chat_id": CHAT_ID, "text": message})
-        print("Message sent successfully!")
-    except Exception as e:
-        print(f"Failed to send: {e}")
+    requests.post(url, data={"chat_id": CHAT_ID, "text": message})
 
 if __name__ == "__main__":
     main()
+
 
 
 
