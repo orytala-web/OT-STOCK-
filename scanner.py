@@ -21,16 +21,31 @@ STOCKS = [
     "GCT.TA", "GGR.TA", "GLAT.TA", "GRE.TA", "ILDC.TA", "INRM.TA", "ISTR.TA",
     "MTRX.TA", "MREIT.TA", "NETO.TA", "NVMI.TA", "PSTG.TA", "PTNR.TA", "SKBN.TA",
     "TSEM.TA", "VTRK.TA", "WIX.TA", "YCDA.TA", "ZIM.TA", # רשימת מניות משולבת: ישראל + ארה"ב (כדי להבטיח תוצאות)
-STOCKS = [
-    # --- מניות ישראל ---
-    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "BEZQ.TA", "TEVA.TA", "NICE.TA", 
-    "ICL.TA", "ORL.TA", "DSCT.TA", "ELTR.TA", "PHOE.TA", "MGDL.TA", "AZRG.TA",
-    # --- מניות ארה"ב (S&P 500 ו-Nasdaq) ---
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "AMD", "NFLX", 
-    "PYPL", "INTC", "CSCO", "PEP", "COST", "AVGO", "QCOM", "TMUS", "TXN"
+    # --- מדדים מובילים (ETFs) ---
+    "SPY", "QQQ", "IWM", "DIA", # S&P 500, Nasdaq, Russell 2000, Dow Jones
+
+    # --- ישראל: בנקים ופיננסים ---
+    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA", "CLIS.TA",
+
+    # --- ישראל: נדל"ן ובנייה ---
+    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", "SELA.TA", 
+    "MVNE.TA", "GSPT.TA", "ENGL.TA", "ARPT.TA", "BSRE.TA", "PROP.TA",
+
+    # --- ישראל: מזון וצריכה ---
+    "STRS.TA", "TNVH.TA", "WILH.TA", "SACH.TA", "VICT.TA", "RAMI.TA", "YCHL.TA", "NETO.TA",
+
+    # --- ישראל: טכנולוגיה ותעשייה ---
+    "NICE.TA", "TEVA.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "SPNS.TA", 
+    "AUDC.TA", "GILAT.TA", "OPK.TA", "MTRX.TA", "ONIT.TA", "ALTR.TA",
+
+    # --- ארה"ב: מניות צמיחה וטכנולוגיה (מלא) ---
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "AMD", "NFLX", "AVGO", 
+    "QCOM", "INTC", "CSCO", "PYPL", "ADBE", "CRM", "ABNB", "Airbnb", "UBER", "PANW",
+
+    # --- ארה"ב: פיננסים וצריכה ---
+    "JPM", "BAC", "WFC", "V", "MA", "DIS", "KO", "PEP", "COST", "WMT", "NKE", "SBUX"
 ]
 
-]
 
 def calculate_score(df):
     try:
