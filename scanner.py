@@ -8,102 +8,75 @@ from datetime import datetime
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# רשימה מורחבת של מניות ישראל (ת"א 125 + מניות יתר בולטות)
 STOCKS = [
     "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "MZR.TA", "BEZQ.TA", "TEVA.TA", 
     "NICE.TA", "AZRG.TA", "ICL.TA", "ORL.TA", "DSCT.TA", "AVNV.TA", "DEOL.TA", 
     "OPK.TA", "MVNE.TA", "DANE.TA", "SACH.TA", "CLIS.TA", "GSPT.TA", "ALHE.TA",
     "ENGL.TA", "IES.TA", "PSTR.TA", "HRL.TA", "MGDL.TA", "PHOE.TA", "ELTR.TA",
-    "ARAD.TA", "DELT.TA", "AMOT.TA", "REIT.TA", "DIMO.TA", "MMHD.TA", "SELA.TA",
-    "SPNS.TA", "AUDC.TA", "GILAT.TA", "FTAL.TA", "MELI.TA", "ESLT.TA"
+    "ARAD.TA", "DELT.TA", "AMOT.TA", "REIT.TA", "DIMO.TA", "MMHD.TA", "SELA.TA"
 ]
 
-def detect_patterns(df):
-    """מזהה תבניות פריצה ודגל"""
-    # מוודא שמשתמשים בנתונים כסדרה פשוטה (Squeeze)
-    close = df["Close"].squeeze()
-    high = df["High"].squeeze()
-    
-    if len(close) < 30: return []
-    
-    patterns = []
-    
-    # 1. זיהוי פריצה (Breakout)
-    recent_high = high.iloc[-21:-1].max()
-    if close.iloc[-1] > recent_high:
-        patterns.append("Breakout")
-
-    # 2. זיהוי תבנית דגל (Flag)
-    move = (close.iloc[-4] - close.iloc[-10]) / close.iloc[-10]
-    std_dev = close.iloc[-3:].std() / close.iloc[-3:].mean()
-    if move > 0.05 and std_dev < 0.01:
-        patterns.append("Flag")
-        
-    return patterns
-
-def calculate_score(df, index_df):
+def calculate_score(df):
     try:
-        close_series = df["Close"].squeeze()
-        index_close = index_df["Close"].squeeze()
+        close = df["Close"].squeeze()
+        if len(close) < 160: return None
 
-        if len(close_series) < 160: return None
-
-        ma150 = close_series.rolling(150).mean()
-        curr_price = close_series.iloc[-1]
+        ma150 = close.rolling(150).mean()
+        curr_price = close.iloc[-1]
         curr_ma = ma150.iloc[-1]
 
         if pd.isna(curr_ma) or curr_ma == 0: return None
 
-        distance = abs(curr_price - curr_ma) / curr_ma
-        score = 0
-        
-        # ניקוד קירבה לממוצע 150
-        if distance <= 0.03:
-            score += (1 - (distance / 0.03)) * 40
-        
-        # ניקוד מגמה
-        if curr_ma > ma150.iloc[-20]:
-            score += 30
+        # חישוב המרחק באחוזים
+        # חיובי = מעל הממוצע, שלילי = מתחת לממוצע
+        diff_pct = (curr_price - curr_ma) / curr_ma
 
-        # ניקוד תבניות
-        patterns = detect_patterns(df)
-        if patterns:
-            score += 30
+        # פילטר קשיח: אנחנו רוצים רק מניות שמעל הממוצע (מגמה עולה)
+        # אבל לא רחוקות ממנו יותר מ-2% (הזדמנות כניסה)
+        if diff_pct < 0 or diff_pct > 0.02:
+            return None
 
-        return round(score, 2), patterns
+        # ציון: ככל שקרוב יותר ל-0 (כלומר ממש נוגע בממוצע), הציון גבוה יותר
+        # מניה ב-0% מרחק תקבל 100 נקודות. ב-2% מרחק תקבל 0 נקודות.
+        score = (1 - (diff_pct / 0.02)) * 100
+
+        # בונוס קטן אם יש עלייה בנפח המסחר (מעיד על תמיכה)
+        vol_ratio = df["Volume"].iloc[-1] / df["Volume"].rolling(20).mean().iloc[-1]
+        if vol_ratio > 1.1:
+            score += 10
+
+        return round(score, 2), round(diff_pct * 100, 2)
     except:
         return None
 
 def main():
     results = []
-    # הורדת נתוני מדד
-    index_df = yf.download("^TA125.TA", period="1y", progress=False)
-
+    print("Scanning for entries near MA150...")
+    
     for stock in STOCKS:
         try:
             df = yf.download(stock, period="1y", progress=False)
             if df.empty: continue
             
-            res = calculate_score(df, index_df)
+            res = calculate_score(df)
             if res:
-                score, patterns = res
-                results.append((stock, score, patterns))
+                score, dist = res
+                results.append((stock, score, dist))
         except:
             continue
 
-    # בחירת 10 המניות עם הציון הכי גבוה
+    # מיון לפי הציון הכי גבוה (הכי קרובות לממוצע מלמעלה)
     top_results = sorted(results, key=lambda x: x[1], reverse=True)[:10]
 
     if not top_results:
-        msg = "No suitable stocks found today."
+        msg = "No stocks currently touching MA150 support."
     else:
-        # בניית ההודעה בצורה בטוחה ללא תווים בעייתיים
-        today_str = datetime.today().strftime('%d/%m')
-        msg = f"Stock Scanner Israel - {today_str}\n\n"
-        for i, (stock, score, patterns) in enumerate(top_results, 1):
+        today = datetime.today().strftime('%d/%m')
+        msg = f"📍 MA150 Support Scanner - {today}\n"
+        msg += "Stocks touching/near average (Opportunity):\n\n"
+        for i, (stock, score, dist) in enumerate(top_results, 1):
             name = stock.replace(".TA", "")
-            p_text = f" ({', '.join(patterns)})" if patterns else ""
-            msg += f"{i}. {name}: {score}{p_text}\n"
+            msg += f"{i}. {name}: Distance {dist}% (Score: {score})\n"
 
     send_telegram(msg)
 
@@ -114,6 +87,7 @@ def send_telegram(message):
 
 if __name__ == "__main__":
     main()
+
 
 
 
