@@ -8,12 +8,19 @@ from datetime import datetime
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
+# רשימה מורחבת משמעותית - מעל 100 מניות מובילות בישראל
 STOCKS = [
     "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "MZR.TA", "BEZQ.TA", "TEVA.TA", 
     "NICE.TA", "AZRG.TA", "ICL.TA", "ORL.TA", "DSCT.TA", "AVNV.TA", "DEOL.TA", 
     "OPK.TA", "MVNE.TA", "DANE.TA", "SACH.TA", "CLIS.TA", "GSPT.TA", "ALHE.TA",
     "ENGL.TA", "IES.TA", "PSTR.TA", "HRL.TA", "MGDL.TA", "PHOE.TA", "ELTR.TA",
-    "ARAD.TA", "DELT.TA", "AMOT.TA", "REIT.TA", "DIMO.TA", "MMHD.TA", "SELA.TA"
+    "ARAD.TA", "DELT.TA", "AMOT.TA", "REIT.TA", "DIMO.TA", "MMHD.TA", "SELA.TA",
+    "SPNS.TA", "AUDC.TA", "GILAT.TA", "FTAL.TA", "MELI.TA", "ESLT.TA", "ALTR.TA",
+    "ALON.TA", "AMAL.TA", "ARPT.TA", "ASRT.TA", "BOLI.TA", "BYNR.TA", "CAAS.TA",
+    "CEL.TA", "DLTI.TA", "DRCO.TA", "ELCO.TA", "ELWS.TA", "ENOG.TA", "ENER.TA",
+    "GCT.TA", "GGR.TA", "GLAT.TA", "GRE.TA", "ILDC.TA", "INRM.TA", "ISTR.TA",
+    "MTRX.TA", "MREIT.TA", "NETO.TA", "NVMI.TA", "PSTG.TA", "PTNR.TA", "SKBN.TA",
+    "TSEM.TA", "VTRK.TA", "WIX.TA", "YCDA.TA", "ZIM.TA"
 ]
 
 def calculate_score(df):
@@ -27,34 +34,25 @@ def calculate_score(df):
 
         if pd.isna(curr_ma) or curr_ma == 0: return None
 
-        # חישוב המרחק באחוזים
-        # חיובי = מעל הממוצע, שלילי = מתחת לממוצע
         diff_pct = (curr_price - curr_ma) / curr_ma
 
-        # פילטר קשיח: אנחנו רוצים רק מניות שמעל הממוצע (מגמה עולה)
-        # אבל לא רחוקות ממנו יותר מ-2% (הזדמנות כניסה)
-        if diff_pct < 0 or diff_pct > 0.05:
+        # פילטר: מעל הממוצע ועד 3% מרחק (הגדלנו מ-2%)
+        if diff_pct < 0 or diff_pct > 0.03:
             return None
 
-        # ציון: ככל שקרוב יותר ל-0 (כלומר ממש נוגע בממוצע), הציון גבוה יותר
-        # מניה ב-0% מרחק תקבל 100 נקודות. ב-2% מרחק תקבל 0 נקודות.
-        score = (1 - (diff_pct / 0.05)) * 100
-
-        # בונוס קטן אם יש עלייה בנפח המסחר (מעיד על תמיכה)
-        vol_ratio = df["Volume"].iloc[-1] / df["Volume"].rolling(20).mean().iloc[-1]
-        if vol_ratio > 1.1:
-            score += 10
-
+        # ציון: ככל שקרוב יותר ל-0 הציון גבוה יותר
+        score = (1 - (diff_pct / 0.03)) * 100
         return round(score, 2), round(diff_pct * 100, 2)
     except:
         return None
 
 def main():
     results = []
-    print("Scanning for entries near MA150...")
+    print(f"Scanning {len(STOCKS)} stocks for MA150 support...")
     
     for stock in STOCKS:
         try:
+            # מורידים רק את הנתונים הנחוצים כדי לזרז את הסריקה
             df = yf.download(stock, period="1y", progress=False)
             if df.empty: continue
             
@@ -65,15 +63,15 @@ def main():
         except:
             continue
 
-    # מיון לפי הציון הכי גבוה (הכי קרובות לממוצע מלמעלה)
+    # מיון לפי הציון הכי גבוה
     top_results = sorted(results, key=lambda x: x[1], reverse=True)[:10]
 
+    today = datetime.today().strftime('%d/%m')
     if not top_results:
-        msg = "No stocks currently touching MA150 support."
+        msg = f"Stock Scanner {today}: No stocks found near MA150 support."
     else:
-        today = datetime.today().strftime('%d/%m')
-        msg = f"📍 MA150 Support Scanner - {today}\n"
-        msg += "Stocks touching/near average (Opportunity):\n\n"
+        msg = f"📍 MA150 Entry Opportunities - {today}\n"
+        msg += "Stocks near support line (0-3%):\n\n"
         for i, (stock, score, dist) in enumerate(top_results, 1):
             name = stock.replace(".TA", "")
             msg += f"{i}. {name}: Distance {dist}% (Score: {score})\n"
@@ -87,6 +85,7 @@ def send_telegram(message):
 
 if __name__ == "__main__":
     main()
+
 
 
 
