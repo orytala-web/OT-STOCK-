@@ -36,8 +36,7 @@ def calculate_score(df, index_df):
           index_df["Close"].pct_change(60).iloc[-1])
 
     score = 0
-
-  if (distance < 0.02).any():
+    if (distance < 0.02).any():
 
         score += (1 - distance) * 30
 
