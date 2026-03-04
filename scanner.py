@@ -20,7 +20,16 @@ STOCKS = [
     "CEL.TA", "DLTI.TA", "DRCO.TA", "ELCO.TA", "ELWS.TA", "ENOG.TA", "ENER.TA",
     "GCT.TA", "GGR.TA", "GLAT.TA", "GRE.TA", "ILDC.TA", "INRM.TA", "ISTR.TA",
     "MTRX.TA", "MREIT.TA", "NETO.TA", "NVMI.TA", "PSTG.TA", "PTNR.TA", "SKBN.TA",
-    "TSEM.TA", "VTRK.TA", "WIX.TA", "YCDA.TA", "ZIM.TA"
+    "TSEM.TA", "VTRK.TA", "WIX.TA", "YCDA.TA", "ZIM.TA", # רשימת מניות משולבת: ישראל + ארה"ב (כדי להבטיח תוצאות)
+STOCKS = [
+    # --- מניות ישראל ---
+    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "BEZQ.TA", "TEVA.TA", "NICE.TA", 
+    "ICL.TA", "ORL.TA", "DSCT.TA", "ELTR.TA", "PHOE.TA", "MGDL.TA", "AZRG.TA",
+    # --- מניות ארה"ב (S&P 500 ו-Nasdaq) ---
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "AMD", "NFLX", 
+    "PYPL", "INTC", "CSCO", "PEP", "COST", "AVGO", "QCOM", "TMUS", "TXN"
+]
+
 ]
 
 def calculate_score(df):
