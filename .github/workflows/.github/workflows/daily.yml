@@ -1,6 +1,6 @@
 name: Daily TASE Scanner
 
-on:
+on:  # trigger
   schedule:
     - cron: "0 16 * * 0-4"   # 16:00 UTC = 18:00 ישראל (א'-ה')
   workflow_dispatch:
