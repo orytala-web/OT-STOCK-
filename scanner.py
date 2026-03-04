@@ -43,7 +43,7 @@ def calculate_score(df, index_df):
     if slope > 0:
         score += 25
 
-    if volume_ratio > 1.2:
+    if (volume_ratio > 1.2).any():
         score += 25
 
     if rs > 0:
