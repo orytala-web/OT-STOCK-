@@ -9,38 +9,35 @@ import urllib.parse
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# רשימת המניות (ישראל + ארה"ב)
+# רשימה רחבה מאוד
 STOCKS = [
-    "SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLV", "XLE",
-    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA",
-    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "AURA.TA", "ISRS.TA",
-    "STRS.TA", "TNVH.TA", "WILH.TA", "VICT.TA", "RAMI.TA", "NETO.TA", "TEVA.TA",
-    "NICE.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "ENOG.TA", "ENER.TA",
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ADBE", "ASML",
-    "AMD", "QCOM", "TXN", "INTC", "MU", "AMAT", "LRCX", "ADI", "KLAC", "SNPS",
-    "NFLX", "TMUS", "VZ", "T", "DIS", "JPM", "BAC", "WFC", "GS", "MS", "V", "MA",
-    "WMT", "COST", "HD", "LOW", "NKE", "SBUX", "PG", "KO", "PEP", "CAT", "GE",
-    "XOM", "CVX", "COP", "NEE", "DUK", "LLY", "UNH", "JNJ", "ABBV", "MRK"
+    "SPY", "QQQ", "IWM", "DIA", "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ADBE", "AMD", "QCOM", 
+    "NFLX", "TMUS", "VZ", "T", "DIS", "JPM", "BAC", "WFC", "GS", "MS", "V", "MA", "WMT", "COST", "HD", "LOW", "NKE", "SBUX", 
+    "PG", "KO", "PEP", "CAT", "GE", "XOM", "CVX", "COP", "NEE", "DUK", "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "AMGN", 
+    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA", "AZRG.TA", "MELI.TA", "AMOT.TA", 
+    "ALHE.TA", "DANE.TA", "AURA.TA", "ISRS.TA", "STRS.TA", "TNVH.TA", "WILH.TA", "VICT.TA", "RAMI.TA", "NETO.TA", "TEVA.TA", 
+    "NICE.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "ENOG.TA", "ENER.TA", "OPC.TA", "MTRX.TA", "ONE.TA"
 ]
 
-def get_targeted_news(symbol):
+def get_twitter_backup(search_term):
+    """מחפש אזכורים בטוויטר כגיבוי"""
+    try:
+        # יצירת קישור חיפוש לטוויטר כי API רשמי דורש תשלום יקר
+        twitter_url = f"https://twitter.com/search?q={urllib.parse.quote(search_term)}&src=typed_query&f=live"
+        return f"לא נמצאו חדשות, בדוק דיבור בטוויטר", twitter_url
+    except:
+        return None, None
+
+def get_news_with_twitter_fallback(symbol):
     try:
         clean = symbol.replace(".TA", "")
         is_israeli = ".TA" in symbol
+        hebrew_names = {"POLI": "בנק הפועלים", "LUMI": "בנק לאומי", "BEZQ": "בזק", "AZRG": "עזריאלי", "TEVA": "טבע"}
+        search_term = hebrew_names.get(clean, clean)
         
-        if is_israeli:
-            # חיפוש ממוקד באתרים ישראליים מובילים
-            hebrew_names = {"POLI": "פועלים", "LUMI": "לאומי", "DISI": "דיסקונט", "BEZQ": "בזק", "AZRG": "עזריאלי", "STRS": "שטראוס"}
-            search_term = hebrew_names.get(clean, clean)
-            sites = "(site:calcalist.co.il OR site:globes.co.il OR site:themarker.com OR site:bizportal.co.il)"
-            query = f"{search_term} {sites}"
-            lang, loc = "he", "IL"
-        else:
-            # חיפוש ממוקד באתרים אמריקאיים מובילים
-            sites = "(site:bloomberg.com OR site:reuters.com OR site:cnbc.com OR site:marketwatch.com OR site:finance.yahoo.com)"
-            query = f"{clean} {sites}"
-            lang, loc = "en", "US"
-            
+        # 1. ניסיון בגוגל חדשות
+        lang, loc = ("he", "IL") if is_israeli else ("en", "US")
+        query = f"{search_term} מניה חדשות" if is_israeli else f"{clean} stock news"
         encoded_query = urllib.parse.quote(query)
         url = f"https://news.google.com/rss/search?q={encoded_query}&hl={lang}&gl={loc}&ceid={loc}:{lang}"
         
@@ -49,62 +46,57 @@ def get_targeted_news(symbol):
             title = r.text.split("<title>")[1].split("</title>")[0][:80]
             link = r.text.split("<link>")[1].split("</link>")[0]
             return title + "...", link
+        
+        # 2. אם אין חדשות - חיפוש בטוויטר
+        tw_text, tw_link = get_twitter_backup(search_term)
+        return tw_text, tw_link
+        
     except:
-        pass
-    return "אין חדשות ממוקדות כרגע", ""
+        return None, None
 
 def main():
     il_results, us_results = [], []
-    print(f"🚀 סריקה ממוקדת אתרים ל-{len(STOCKS)} מניות...")
+    print("🚀 סריקה רצה: טכני + חדשות + גיבוי טוויטר...")
 
     for stock in STOCKS:
         try:
             df = yf.download(stock, period="1y", progress=False)
             if df.empty: continue
-            
             close = df["Close"].squeeze()
             ma150 = close.rolling(150).mean()
             curr_p, curr_ma = close.iloc[-1], ma150.iloc[-1]
-            
             if pd.isna(curr_ma): continue
+            
             dist = (curr_p - curr_ma) / curr_ma
             
-            # טווח של 0-4% מהממוצע
-            if 0 <= dist <= 0.04:
-                news_title, news_url = get_targeted_news(stock)
-                data = {
-                    "ticker": stock.replace(".TA", ""),
-                    "dist": round(dist * 100, 2),
-                    "news": news_title,
-                    "url": news_url
-                }
-                if ".TA" in stock:
-                    il_results.append(data)
-                else:
-                    us_results.append(data)
+            if dist >= 0:
+                news_title, news_url = get_news_with_twitter_fallback(stock)
+                # אם אין חדשות ואין טוויטר, אנחנו עדיין שומרים את המניה אבל בלי טקסט חדשותי
+                data = {"ticker": stock.replace(".TA", ""), "dist": round(dist * 100, 2), "news": news_title, "url": news_url}
+                if ".TA" in stock: il_results.append(data)
+                else: us_results.append(data)
         except: continue
 
-    # מיון ובחירת 10 מכל שוק
+    # בחירת ה-10 הכי קרובות
     il_top = sorted(il_results, key=lambda x: x['dist'])[:10]
     us_top = sorted(us_results, key=lambda x: x['dist'])[:10]
 
     today = datetime.today().strftime('%d/%m/%Y')
-    msg = f"💎 **דוח הזדמנויות VIP** - {today}\n"
-    msg += "ניתוח טכני (MA150) + חדשות ממקורות מובילים\n\n"
+    msg = f"📊 **דוח הזדמנויות משולב (News & X)** - {today}\n\n"
     
-    msg += "🇮🇱 **ישראל (כלכליסט/גלובס/דה-מרקר):**\n"
-    for i, res in enumerate(il_top, 1):
-        msg += f"{i}. {res['ticker']} | {res['dist']}%\n📰 {res['news']}\n🔗 {res['url']}\n\n"
-    
-    msg += "🇺🇸 **ארה\"ב (Bloomberg/CNBC/Reuters):**\n"
-    for i, res in enumerate(us_top, 1):
-        msg += f"{i}. {res['ticker']} | {res['dist']}%\n📰 {res['news']}\n🔗 {res['url']}\n\n"
+    for section_name, results, emoji in [("ישראל", il_top, "🇮🇱"), ("ארה\"ב", us_top, "🇺🇸")]:
+        msg += f"{emoji} **{section_name}:**\n"
+        for i, res in enumerate(results, 1):
+            news_line = f"📰 {res['news']}" if res['news'] else "בלי חדשות כרגע"
+            link_line = f"\n🔗 [לקריאה/דיבור]({res['url']})" if res['url'] else ""
+            msg += f"{i}. **{res['ticker']}** | {res['dist']}%\n{news_line}{link_line}\n\n"
 
     requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
                   data={"chat_id": CHAT_ID, "text": msg, "parse_mode": "Markdown", "disable_web_page_preview": True})
 
 if __name__ == "__main__":
     main()
+
  
 
 
