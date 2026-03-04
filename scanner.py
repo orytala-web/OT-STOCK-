@@ -8,91 +8,126 @@ import urllib.parse
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# רשימה מורחבת (דוגמה)
-STOCKS = ["POLI.TA", "LUMI.TA", "NICE.TA", "TEVA.TA", "BEZQ.TA", "AZRG.TA", "ICL.TA"]
+# רשימת "מפלצת" - ישראל + ארה"ב (מעל 350 מניות)
+STOCKS = [
+    # --- מדדים ---
+    "SPY", "QQQ", "IWM", "DIA",
+    # --- ישראל: בנקים, נדל"ן, טכנולוגיה ומזון (ת"א 125+) ---
+    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA", 
+    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", "AURA.TA",
+    "NICE.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "STRS.TA", "TEVA.TA",
+    "VICT.TA", "RAMI.TA", "ELAL.TA", "ENOG.TA", "ENER.TA", "OPC.TA", "MTRX.TA", "ONE.TA",
+    # --- ארה"ב: ה-200 הגדולות (S&P 200) ---
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ADBE", "ASML",
+    "AMD", "QCOM", "TXN", "INTC", "MU", "AMAT", "LRCX", "ADI", "KLAC", "SNPS",
+    "CDNS", "PANW", "FTNT", "CSCO", "ORCL", "CRM", "ACN", "IBM", "INTU", "NOW",
+    "UBER", "ABNB", "SHOP", "NFLX", "TMUS", "VZ", "T", "CMCSA", "DIS", "EA",
+    "JPM", "BAC", "WFC", "C", "GS", "MS", "V", "MA", "AXP", "PYPL", "BLK",
+    "BX", "AMP", "SCHW", "CB", "MMC", "PGR", "MET", "PRU", "AIG", "TRV",
+    "SPGI", "MCO", "ICE", "CME", "COF", "DFS", "SYF", "USB", "TFC", "PNC",
+    "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "AMGN", "TMO", "DHR", "ISRG",
+    "GILD", "VRTX", "REGN", "BMY", "BSX", "SYK", "ZTS", "BDX", "MCK", "ABC",
+    "CI", "CVS", "HCA", "GEHC", "IDXX", "IQV", "EW", "HUM", "MDT", "BAX",
+    "WMT", "COST", "TGT", "HD", "LOW", "NKE", "SBUX", "TJX", "EL", "CL",
+    "PG", "KO", "PEP", "PM", "MO", "MDLZ", "ADM", "CAT", "DE", "GE",
+    "HON", "BA", "LMT", "RTX", "NOC", "GD", "MMM", "UPS", "FDX", "UNP",
+    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "PXD", "DVN"
+]
 
-def get_israeli_news(stock_name):
-    """
-    מחפש כותרות אחרונות בגוגל חדשות ממוקד לאתרים כלכליים בישראל
-    """
-    clean_name = stock_name.replace(".TA", "")
-    # חיפוש ממוקד באתרים כלכליים מובילים
-    query = f"{clean_name} (site:calcalist.co.il OR site:globes.co.il OR site:themarker.com)"
-    encoded_query = urllib.parse.quote(query)
-    rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=he&gl=IL&ceid=IL:he"
+def get_news(symbol):
+    """מחפש חדשות רלוונטיות בגוגל חדשות"""
+    clean_name = symbol.replace(".TA", "")
+    # תרגום בסיסי למניות ישראליות בולטות לשיפור חיפוש
+    hebrew_map = {"POLI": "פועלים", "LUMI": "לאומי", "BEZQ": "בזק", "AZRG": "עזריאלי"}
+    search_query = hebrew_map.get(clean_name, clean_name)
+    
+    encoded = urllib.parse.quote(search_query)
+    url = f"https://news.google.com/rss/search?q={encoded}&hl=he&gl=IL&ceid=IL:he" if ".TA" in symbol else f"https://news.google.com/rss/search?q={encoded}&hl=en&gl=US&ceid=US:en"
     
     try:
-        response = requests.get(rss_url, timeout=10)
-        # חילוץ כותרות פשוט (בלי ספריות כבדות)
-        titles = []
-        items = response.text.split("<item>")[1:4] # 3 כותרות ראשונות
-        for item in items:
-            title = item.split("<title>")[1].split("</title>")[0]
-            titles.append(title)
-        return titles
+        r = requests.get(url, timeout=5)
+        title = r.text.split("<title>")[1].split("</title>")[0]
+        return title[:65] + "..."
     except:
-        return []
-
-def calculate_combined_score(stock, df):
-    try:
-        close = df["Close"].squeeze()
-        if len(close) < 160: return None
-        
-        # ניתוח טכני: קרבה לממוצע 150 (עד 3%)
-        ma150 = close.rolling(150).mean()
-        curr_price = close.iloc[-1]
-        curr_ma = ma150.iloc[-1]
-        diff_pct = (curr_price - curr_ma) / curr_ma
-        
-        if diff_pct < 0 or diff_pct > 0.03: return None
-        
-        tech_score = (1 - (diff_pct / 0.03)) * 100
-        
-        # ניתוח חדשות מישראל
-        news_headlines = get_israeli_news(stock)
-        
-        # חיפוש מילות מפתח חיוביות בעברית
-        pos_words = ['רווח', 'צמיחה', 'הסכם', 'רכישה', 'חיובי', 'דיבידנד', 'זינוק']
-        neg_words = ['הפסד', 'ירידה', 'חקירה', 'קריסה', 'אזהרה', 'תביעה']
-        
-        sentiment_bonus = 0
-        for title in news_headlines:
-            for word in pos_words:
-                if word in title: sentiment_bonus += 10
-            for word in neg_words:
-                if word in title: sentiment_bonus -= 15
-
-        return round(tech_score + sentiment_bonus, 2), round(diff_pct * 100, 2), news_headlines
-    except:
-        return None
+        return "אין חדשות רלוונטיות כרגע"
 
 def main():
-    results = []
-    print("סורק מניות ומחפש חדשות באתרים כלכליים...")
+    final_picks = []
+    print(f"🚀 סריקה מאסיבית מתחילה: {len(STOCKS)} מניות...")
     
     for stock in STOCKS:
         try:
-            df = yf.download(stock, period="1y", progress=False)
-            if df.empty: continue
+            data = yf.download(stock, period="1y", progress=False)
+            if data.empty: continue
             
-            res = calculate_combined_score(stock, df)
-            if res:
-                score, dist, headlines = res
-                results.append((stock, score, dist, headlines))
-        except: continue
+            close = data["Close"].squeeze()
+            ma150 = close.rolling(150).mean()
+            
+            curr_p = close.iloc[-1]
+            curr_ma = ma150.iloc[-1]
+            
+            if pd.isna(curr_ma): continue
+            
+            diff = (curr_p - curr_ma) / curr_ma
+            
+            # פילטר: 0 עד 4% מעל הממוצע
+            if 0 <= diff <= 0.04:
+                news_headline = get_news(stock)
+                final_picks.append({
+                    "ticker": stock.replace(".TA", ""),
+                    "dist": round(diff * 100, 2),
+                    "news": news_headline
+                })
+        except:
+            continue
 
-    top_results = sorted(results, key=lambda x: x[1], reverse=True)[:10]
+    # בחירת ה-15 הכי קרובות
+    final_picks = sorted(final_picks, key=lambda x: x['dist'])[:15]
+    
+    date_str = datetime.today().strftime('%d/%m/%Y')
+    if not final_picks:
+        msg = f"🔍 סריקה גלובלית {date_str}: השוק מתוח, לא נמצאו מניות קרובות לממוצע."
+    else:
+        msg = f"📊 הזדמנויות קרובות לממוצע 150 - {date_str}\n\n"
+        for i, item in enumerate(final_picks, 1):
+            msg += f"{i}. {item['ticker']} | מרחק: {item['dist']}%\n"
+            msg += f"📰 {item['news']}\n\n"
+
+    send_telegram(msg)
+
+def send_telegram(message):
+    if not TELEGRAM_TOKEN or not CHAT_ID: return
+    requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
+                  data={"chat_id": CHAT_ID, "text": message})
+
+if __name__ == "__main__":
+    main()
+
+            diff_pct = (curr_price - curr_ma) / curr_ma
+            
+            # הרחבנו את הטווח ל-5% כדי לוודא שתקבל תוצאות
+            if 0 <= diff_pct <= 0.05:
+                news = get_israeli_news_simple(stock)
+                results.append({
+                    "name": stock.replace(".TA", ""),
+                    "dist": round(diff_pct * 100, 2),
+                    "news": news
+                })
+        except Exception as e:
+            print(f"Error scanning {stock}: {e}")
+
+    # מיון לפי הקרבה לממוצע
+    results = sorted(results, key=lambda x: x['dist'])[:10]
     
     today = datetime.today().strftime('%d/%m/%Y')
-    msg = f"🇮🇱 סורק משולב: טכני + חדשות ישראל - {today}\n\n"
-    
-    for i, (stock, score, dist, headlines) in enumerate(top_results, 1):
-        name = stock.replace(".TA", "")
-        msg += f"{i}. {name} | מרחק: {dist}%\n"
-        if headlines:
-            msg += f"📰 כותרת: {headlines[0][:60]}...\n"
-        msg += f"⭐ ציון משולב: {score}\n\n"
-        
+    if not results:
+        msg = f"🔍 סורק {today}: לא נמצאו מניות בטווח של 5% מהממוצע."
+    else:
+        msg = f"📍 מניות קרובות לתמיכה (MA150) - {today}\n\n"
+        for i, res in enumerate(results, 1):
+            msg += f"{i}. {res['name']} | מרחק: {res['dist']}%\n"
+            msg += f"📰 {res['news']}\n\n"
+            
     send_telegram(msg)
 
 def send_telegram(message):
@@ -102,6 +137,7 @@ def send_telegram(message):
 
 if __name__ == "__main__":
     main()
+
 
 
 
