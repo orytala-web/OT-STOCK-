@@ -8,42 +8,53 @@ from datetime import datetime
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# רשימה מורחבת משמעותית - מעל 100 מניות מובילות בישראל
-STOCKS = [
-    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "MZR.TA", "BEZQ.TA", "TEVA.TA", 
-    "NICE.TA", "AZRG.TA", "ICL.TA", "ORL.TA", "DSCT.TA", "AVNV.TA", "DEOL.TA", 
-    "OPK.TA", "MVNE.TA", "DANE.TA", "SACH.TA", "CLIS.TA", "GSPT.TA", "ALHE.TA",
-    "ENGL.TA", "IES.TA", "PSTR.TA", "HRL.TA", "MGDL.TA", "PHOE.TA", "ELTR.TA",
-    "ARAD.TA", "DELT.TA", "AMOT.TA", "REIT.TA", "DIMO.TA", "MMHD.TA", "SELA.TA",
-    "SPNS.TA", "AUDC.TA", "GILAT.TA", "FTAL.TA", "MELI.TA", "ESLT.TA", "ALTR.TA",
-    "ALON.TA", "AMAL.TA", "ARPT.TA", "ASRT.TA", "BOLI.TA", "BYNR.TA", "CAAS.TA",
-    "CEL.TA", "DLTI.TA", "DRCO.TA", "ELCO.TA", "ELWS.TA", "ENOG.TA", "ENER.TA",
-    "GCT.TA", "GGR.TA", "GLAT.TA", "GRE.TA", "ILDC.TA", "INRM.TA", "ISTR.TA",
-    "MTRX.TA", "MREIT.TA", "NETO.TA", "NVMI.TA", "PSTG.TA", "PTNR.TA", "SKBN.TA",
-    "TSEM.TA", "VTRK.TA", "WIX.TA", "YCDA.TA", "ZIM.TA", # רשימת מניות משולבת: ישראל + ארה"ב (כדי להבטיח תוצאות)
-    # --- מדדים מובילים (ETFs) ---
-    "SPY", "QQQ", "IWM", "DIA", # S&P 500, Nasdaq, Russell 2000, Dow Jones
+# רשימה מורחבת משמעותית - מעל 100 מניות מובילות בישראלSTOCKS = [
+    # --- מדדים (ETFs) ---
+    "SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLV",
 
     # --- ישראל: בנקים ופיננסים ---
-    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA", "CLIS.TA",
+    "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", 
+    "PHOE.TA", "MGDL.TA", "HRL.TA", "CLIS.TA", "ALTR.TA", "MENO.TA",
 
     # --- ישראל: נדל"ן ובנייה ---
-    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", "SELA.TA", 
-    "MVNE.TA", "GSPT.TA", "ENGL.TA", "ARPT.TA", "BSRE.TA", "PROP.TA",
+    "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", 
+    "SELA.TA", "MVNE.TA", "GSPT.TA", "ENGL.TA", "ARPT.TA", "BSRE.TA", "PROP.TA",
+    "AURA.TA", "AFRE.TA", "IBPR.TA", "ISRS.TA", "GLDS.TA", "ZMH.TA",
 
-    # --- ישראל: מזון וצריכה ---
-    "STRS.TA", "TNVH.TA", "WILH.TA", "SACH.TA", "VICT.TA", "RAMI.TA", "YCHL.TA", "NETO.TA",
+    # --- ישראל: מזון, צריכה ופארמה ---
+    "STRS.TA", "TNVH.TA", "WILH.TA", "SACH.TA", "VICT.TA", "RAMI.TA", "YCHL.TA", 
+    "NETO.TA", "TEVA.TA", "OPK.TA", "ELAL.TA", "DIPL.TA", "FOX.TA", "GOLF.TA",
 
-    # --- ישראל: טכנולוגיה ותעשייה ---
-    "NICE.TA", "TEVA.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "SPNS.TA", 
-    "AUDC.TA", "GILAT.TA", "OPK.TA", "MTRX.TA", "ONIT.TA", "ALTR.TA",
+    # --- ישראל: טכנולוגיה, אנרגיה ותעשייה ---
+    "NICE.TA", "BEZQ.TA", "TSEM.TA", "ESLT.TA", "ICL.TA", "ORL.TA", "SPNS.TA", 
+    "AUDC.TA", "GILAT.TA", "MTRX.TA", "ONIT.TA", "ENOG.TA", "ENER.TA", "NVRG.TA", 
+    "PZOL.TA", "DLTI.TA", "ELCO.TA", "EVNR.TA",
 
-    # --- ארה"ב: מניות צמיחה וטכנולוגיה (מלא) ---
-    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "TSLA", "NVDA", "AMD", "NFLX", "AVGO", 
-    "QCOM", "INTC", "CSCO", "PYPL", "ADBE", "CRM", "ABNB", "Airbnb", "UBER", "PANW",
+    # --- ארה"ב: S&P 500 - טכנולוגיה ותקשורת ---
+    "AAPL", "MSFT", "GOOGL", "AMZN", "META", "NVDA", "TSLA", "AVGO", "ADBE", "ASML",
+    "AMD", "QCOM", "TXN", "INTC", "MU", "AMAT", "LRCX", "ADI", "KLAC", "SNPS",
+    "CDNS", "PANW", "FTNT", "CSCO", "ORCL", "CRM", "ACN", "IBM", "INTU", "NOW",
+    "UBER", "ABNB", "SHOP", "NFLX", "TMUS", "VZ", "T", "CMCSA", "DIS", "EA",
 
-    # --- ארה"ב: פיננסים וצריכה ---
-    "JPM", "BAC", "WFC", "V", "MA", "DIS", "KO", "PEP", "COST", "WMT", "NKE", "SBUX"
+    # --- ארה"ב: S&P 500 - פיננסים ---
+    "JPM", "BAC", "WFC", "C", "GS", "MS", "V", "MA", "AXP", "PYPL", "BLK",
+    "BX", "AMP", "SCHW", "CB", "MMC", "PGR", "MET", "PRU", "AIG", "TRV",
+    "SPGI", "MCO", "ICE", "CME", "COF", "DFS", "SYF", "USB", "TFC", "PNC",
+
+    # --- ארה"ב: S&P 500 - בריאות ופארמה ---
+    "LLY", "UNH", "JNJ", "ABBV", "MRK", "PFE", "AMGN", "TMO", "DHR", "ISRG",
+    "GILD", "VRTX", "REGN", "BMY", "BSX", "SYK", "ZTS", "BDX", "MCK", "ABC",
+    "CI", "CVS", "HCA", "GEHC", "IDXX", "IQV", "EW", "HUM", "MDT", "BAX",
+
+    # --- ארה"ב: S&P 500 - צריכה ותעשייה ---
+    "WMT", "COST", "TGT", "HD", "LOW", "NKE", "SBUX", "TJX", "EL", "CL",
+    "PG", "KO", "PEP", "PM", "MO", "MDLZ", "ADM", "CAT", "DE", "GE",
+    "HON", "BA", "LMT", "RTX", "NOC", "GD", "MMM", "UPS", "FDX", "UNP",
+    "CSX", "NSC", "ETN", "EMR", "ITW", "PH", "AME", "ROK", "PCAR", "FAST",
+
+    # --- ארה"ב: S&P 500 - אנרגיה ותשתיות ---
+    "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "PXD", "DVN",
+    "NEE", "DUK", "SO", "D", "AEP", "EXC", "PCG", "SRE", "ED", "PEG"
 ]
 
 
