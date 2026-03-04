@@ -11,7 +11,7 @@ CHAT_ID = os.environ.get("CHAT_ID")
 
 # רשימת ה-300 המלאה
 STOCKS = [
-    "DIA", "XLK", "XLF", "XLV", "XLE",
+    "SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLV", "XLE",
     "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", "PHOE.TA", "MGDL.TA", "HRL.TA", "CLIS.TA", "ALTR.TA", "MENO.TA",
     "AZRG.TA", "MELI.TA", "AMOT.TA", "ALHE.TA", "DANE.TA", "DIMO.TA", "REIT.TA", "SELA.TA", "MVNE.TA", "GSPT.TA", "ENGL.TA", 
     "ARPT.TA", "BSRE.TA", "PROP.TA", "AURA.TA", "AFRE.TA", "IBPR.TA", "ISRS.TA", "GLDS.TA", "ZMH.TA",
@@ -25,7 +25,7 @@ STOCKS = [
     "XOM", "CVX", "COP", "SLB", "EOG", "MPC", "PSX", "VLO", "NEE", "DUK", "SO", "D", "AEP", "EXC", "PCG"
 ]
 
-def get_news_headline(symbol):
+def get_news_with_link(symbol):
     try:
         clean = symbol.replace(".TA", "")
         hebrew_names = {"POLI": "פועלים", "LUMI": "לאומי", "DISI": "דיסקונט", "BEZQ": "בזק", "AZRG": "עזריאלי"}
@@ -34,16 +34,19 @@ def get_news_headline(symbol):
         loc = "IL" if ".TA" in symbol else "US"
         query = urllib.parse.quote(search_term)
         url = f"https://news.google.com/rss/search?q={query}&hl={lang}&gl={loc}&ceid={loc}:{lang}"
+        
         r = requests.get(url, timeout=5)
         if "<item>" in r.text:
-            return r.text.split("<title>")[1].split("</title>")[0][:75] + "..."
+            title = r.text.split("<title>")[1].split("</title>")[0][:75]
+            link = r.text.split("<link>")[1].split("</link>")[0]
+            return title + "...", link
     except: pass
-    return "אין חדשות טריות"
+    return "אין חדשות טריות", ""
 
 def main():
     il_results = []
     us_results = []
-    print(f"🚀 סריקה מאוחדת ל-10+10 מניות...")
+    print("🚀 סריקה מאוחדת ל-10+10 מניות עם קישורים...")
 
     for stock in STOCKS:
         try:
@@ -56,35 +59,39 @@ def main():
             dist = (curr_p - curr_ma) / curr_ma
             
             if 0 <= dist <= 0.04:
-                news = get_news_headline(stock)
-                data = {"ticker": stock.replace(".TA", ""), "dist": round(dist * 100, 2), "news": news}
+                news_title, news_url = get_news_with_link(stock)
+                data = {
+                    "ticker": stock.replace(".TA", ""), 
+                    "dist": round(dist * 100, 2), 
+                    "news": news_title,
+                    "url": news_url
+                }
                 if ".TA" in stock:
                     il_results.append(data)
                 else:
                     us_results.append(data)
         except: continue
 
-    # בחירת ה-10 הכי קרובות מכל שוק
     il_top = sorted(il_results, key=lambda x: x['dist'])[:10]
     us_top = sorted(us_results, key=lambda x: x['dist'])[:10]
 
     today = datetime.today().strftime('%d/%m/%Y')
     msg = f"📊 דוח הזדמנויות MA150 - {today}\n\n"
     
-    msg += "🇮🇱 מניות מישראל (Top 10):\n"
-    if not il_top: msg += "לא נמצאו מניות בטווח.\n"
+    msg += "🇮🇱 ישראל (Top 10):\n"
     for i, res in enumerate(il_top, 1):
-        msg += f"{i}. {res['ticker']} | {res['dist']}%\n📰 {res['news']}\n"
+        msg += f"{i}. {res['ticker']} | {res['dist']}%\n📰 {res['news']}\n🔗 {res['url']}\n\n"
     
-    msg += "\n🇺🇸 מניות מארה\"ב (Top 10):\n"
-    if not us_top: msg += "לא נמצאו מניות בטווח.\n"
+    msg += "🇺🇸 ארה\"ב (Top 10):\n"
     for i, res in enumerate(us_top, 1):
-        msg += f"{i}. {res['ticker']} | {res['dist']}%\n📰 {res['news']}\n"
+        msg += f"{i}. {res['ticker']} | {res['dist']}%\n📰 {res['news']}\n🔗 {res['url']}\n\n"
 
-    requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", data={"chat_id": CHAT_ID, "text": msg})
+    requests.post(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage", 
+                  data={"chat_id": CHAT_ID, "text": msg, "disable_web_page_preview": True})
 
 if __name__ == "__main__":
     main()
+
 
 
 
