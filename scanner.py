@@ -5,18 +5,11 @@ import numpy as np
 import os
 from datetime import datetime
 
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-CHAT_ID = os.environ.get("CHAT_import requests
-import yfinance as yf
-import pandas as pd
-import numpy as np
-import os
-from datetime import datetime
-
+# הגדרות התחברות
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
 
-# רשימה מאוחדת: מדדים, ישראל (ת"א 125, בנקים, נדל"ן, מזון) ו-200 הגדולות של S&P 500
+# רשימה מאוחדת ומלאה (ישראל + ארה"ב)
 STOCKS = [
     "SPY", "QQQ", "IWM", "DIA", "XLK", "XLF", "XLV",
     "POLI.TA", "LUMI.TA", "DISI.TA", "FIBI.TA", "DSCT.TA", 
@@ -56,6 +49,7 @@ def calculate_score(df):
         curr_ma = ma150.iloc[-1]
         if pd.isna(curr_ma) or curr_ma == 0: return None
         diff_pct = (curr_price - curr_ma) / curr_ma
+        # מרחק של עד 3% מעל הממוצע
         if diff_pct < 0 or diff_pct > 0.03: return None
         score = (1 - (diff_pct / 0.03)) * 100
         return round(score, 2), round(diff_pct * 100, 2)
@@ -64,6 +58,7 @@ def calculate_score(df):
 
 def main():
     results = []
+    print(f"Starting scan for {len(STOCKS)} stocks...")
     for stock in STOCKS:
         try:
             df = yf.download(stock, period="1y", progress=False)
@@ -74,89 +69,34 @@ def main():
                 results.append((stock, score, dist))
         except:
             continue
+            
     top_results = sorted(results, key=lambda x: x[1], reverse=True)[:15]
-    today = datetime.today().strftime('%d/%m')
+    today = datetime.today().strftime('%d/%m/%Y')
+    
     if not top_results:
-        msg = f"Scanner {today}: No stocks found near MA150."
+        msg = f"Scanner {today}: No stocks found near MA150 support."
     else:
-        msg = f"📍 MA150 Global Support - {today}\n\n"
+        msg = f"📍 MA150 Support Scanner - {today}\n\n"
         for i, (stock, score, dist) in enumerate(top_results, 1):
             name = stock.replace(".TA", "")
             msg += f"{i}. {name}: Dist {dist}% (Score: {score})\n"
-    send_telegram(msg)
-
-def send_telegram(message):
-    if not TELEGRAM_TOKEN: return
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": message})
-
-if __name__ == "__main__":
-    main()
-
-
-
-def calculate_score(df):
-    try:
-        close = df["Close"].squeeze()
-        if len(close) < 160: return None
-
-        ma150 = close.rolling(150).mean()
-        curr_price = close.iloc[-1]
-        curr_ma = ma150.iloc[-1]
-
-        if pd.isna(curr_ma) or curr_ma == 0: return None
-
-        diff_pct = (curr_price - curr_ma) / curr_ma
-
-        # פילטר: מעל הממוצע ועד 3% מרחק (הגדלנו מ-2%)
-        if diff_pct < 0 or diff_pct > 0.03:
-            return None
-
-        # ציון: ככל שקרוב יותר ל-0 הציון גבוה יותר
-        score = (1 - (diff_pct / 0.03)) * 100
-        return round(score, 2), round(diff_pct * 100, 2)
-    except:
-        return None
-
-def main():
-    results = []
-    print(f"Scanning {len(STOCKS)} stocks for MA150 support...")
-    
-    for stock in STOCKS:
-        try:
-            # מורידים רק את הנתונים הנחוצים כדי לזרז את הסריקה
-            df = yf.download(stock, period="1y", progress=False)
-            if df.empty: continue
             
-            res = calculate_score(df)
-            if res:
-                score, dist = res
-                results.append((stock, score, dist))
-        except:
-            continue
-
-    # מיון לפי הציון הכי גבוה
-    top_results = sorted(results, key=lambda x: x[1], reverse=True)[:10]
-
-    today = datetime.today().strftime('%d/%m')
-    if not top_results:
-        msg = f"Stock Scanner {today}: No stocks found near MA150 support."
-    else:
-        msg = f"📍 MA150 Entry Opportunities - {today}\n"
-        msg += "Stocks near support line (0-3%):\n\n"
-        for i, (stock, score, dist) in enumerate(top_results, 1):
-            name = stock.replace(".TA", "")
-            msg += f"{i}. {name}: Distance {dist}% (Score: {score})\n"
-
     send_telegram(msg)
 
 def send_telegram(message):
-    if not TELEGRAM_TOKEN: return
+    if not TELEGRAM_TOKEN or not CHAT_ID:
+        print("Missing Telegram credentials")
+        return
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    requests.post(url, data={"chat_id": CHAT_ID, "text": message})
+    try:
+        requests.post(url, data={"chat_id": CHAT_ID, "text": message})
+        print("Message sent successfully!")
+    except Exception as e:
+        print(f"Failed to send: {e}")
 
 if __name__ == "__main__":
     main()
+
 
 
 
